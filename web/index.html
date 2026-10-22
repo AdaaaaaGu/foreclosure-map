@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Foreclosure Map</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 3 14h4v14h7v-8h4v8h7V14h4z' fill='%231f5eff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Upload / library screen -->
+  <section id="upload-view" class="upload-view" hidden>
+    <div class="upload-card">
+      <div class="brand big"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 14h4v14h7v-8h4v8h7V14h4z"/></svg>Foreclosure Map</div>
+      <p class="muted">Upload a Roddy's foreclosure list (PDF). Every posting is read, located, and put on the map.</p>
+      <label id="dropzone" class="dropzone">
+        <input id="file-input" type="file" accept="application/pdf" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Drop the PDF here</strong>
+        <span class="muted">or click to choose a file</span>
+      </label>
+      <div id="progress" class="progress" hidden>
+        <div class="progress-stage" id="progress-stage">Starting…</div>
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        <div class="progress-detail muted" id="progress-detail"></div>
+      </div>
+      <div id="upload-error" class="error" hidden></div>
+      <div id="library" class="library" hidden>
+        <h3>Your books</h3>
+        <ul id="library-list"></ul>
+      </div>
+      <button id="upload-cancel" class="link-btn" hidden>← Back to map</button>
+    </div>
+  </section>
+
+  <!-- Main map view -->
+  <section id="main-view" class="main-view" hidden>
+    <header class="topbar">
+      <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 14h4v14h7v-8h4v8h7V14h4z"/></svg><span>Foreclosure Map</span></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" type="search" placeholder="Address, owner, lender, subdivision…" autocomplete="off">
+      </div>
+      <div class="topbar-right">
+        <select id="book-select" title="Switch book"></select>
+        <button id="btn-results" class="btn ghost" title="Attach this month's foreclosure results (sold prices)">Add results</button>
+        <button id="btn-upload" class="btn primary">Upload book</button>
+      </div>
+    </header>
+
+    <div class="filterbar" id="filterbar">
+      <div class="chip-wrap" data-filter="city"><button class="chip">City <span class="chip-count"></span></button><div class="pop"></div></div>
+      <div class="chip-wrap" data-filter="type"><button class="chip">Home type <span class="chip-count"></span></button><div class="pop"></div></div>
+      <div class="chip-wrap" data-filter="loan"><button class="chip">Loan type <span class="chip-count"></span></button><div class="pop"></div></div>
+      <div class="chip-wrap" data-filter="equity"><button class="chip">Equity <span class="chip-count"></span></button><div class="pop"></div></div>
+      <div class="chip-wrap" data-filter="value"><button class="chip">Value <span class="chip-count"></span></button><div class="pop"></div></div>
+      <div class="chip-wrap" data-filter="status" id="status-filter" hidden><button class="chip">Sold / Unsold <span class="chip-count"></span></button><div class="pop"></div></div>
+      <button class="chip reset" id="btn-reset" hidden>Reset</button>
+      <div class="spacer"></div>
+      <label class="sort">Sort
+        <select id="sort">
+          <option value="id">Book order (ID)</option>
+          <option value="equity-desc">Equity $ (high → low)</option>
+          <option value="margin-desc">Equity % (high → low)</option>
+          <option value="assessed-desc">Value (high → low)</option>
+          <option value="assessed-asc">Value (low → high)</option>
+          <option value="balance-desc">Est. balance (high → low)</option>
+          <option value="sold-desc">Sold price (high → low)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="content">
+      <div id="map" class="map"></div>
+      <aside class="list-pane">
+        <div class="list-head">
+          <div>
+            <h1 id="book-title">—</h1>
+            <div class="muted" id="book-sub"></div>
+          </div>
+          <label class="toggle" title="Only list postings inside the visible map area">
+            <input type="checkbox" id="in-view"> <span>In map area</span>
+          </label>
+        </div>
+        <div id="notices" class="notices"></div>
+        <div id="cards" class="cards"></div>
+      </aside>
+    </div>
+
+    <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+    <article id="drawer" class="drawer" aria-hidden="true"></article>
+  </section>
+
+  <input id="results-input" type="file" accept="application/pdf,.csv,.json" hidden>
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

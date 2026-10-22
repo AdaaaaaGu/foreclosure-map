@@ -1,0 +1,11 @@
+# Book PDFs and everything derived from them stay local: the lists are a paid
+# subscriber publication and the rows hold real owners' names and addresses.
+*.pdf
+data/
+
+# Compiled OCR helper (run.sh rebuilds it from pdf_ocr.swift)
+ocr/pdf_ocr
+
+.DS_Store
+__pycache__/
+*.pyc
